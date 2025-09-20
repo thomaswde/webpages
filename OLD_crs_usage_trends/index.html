@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRS Usage Report - Single Canvas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        #mainCanvas {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- The final combined image will be drawn here -->
+    <canvas id="mainCanvas" width="900" height="1100"></canvas>
+
+    <!-- Hidden canvases for rendering individual charts -->
+    <div style="display: none;">
+        <canvas id="pieChartCanvas" width="900" height="450"></canvas>
+        <canvas id="trendChartCanvas" width="900" height="500"></canvas>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const reportData = `
+    9/18/2025,42699,50000
+    9/17/2025,43166,50000
+    9/16/2025,43462,50000
+    9/15/2025,43184,50000
+    9/14/2025,36983,50000
+    9/13/2025,39135,50000
+    9/12/2025,44186,50000
+    9/11/2025,43557,50000
+    9/10/2025,43865,50000
+    9/9/2025,43281,50000
+    9/8/2025,41686,50000
+    9/7/2025,36532,50000
+    9/6/2025,38761,50000
+    9/5/2025,41495,50000
+    9/4/2025,42287,50000
+    9/3/2025,43944,50000
+    9/2/2025,43784,50000
+    9/1/2025,39543,50000
+    8/31/2025,37089,50000
+    8/30/2025,39734,50000
+    8/29/2025,44592,50000
+    8/28/2025,43936,50000
+    8/27/2025,43923,50000
+    8/26/2025,43960,50000
+    8/25/2025,43319,50000
+    8/24/2025,37125,50000
+    8/23/2025,38574,50000
+    8/22/2025,43965,50000
+    8/21/2025,43305,50000
+    8/20/2025,43393,50000
+    8/19/2025,42615,50000
+    8/18/2025,42838,50000
+    8/17/2025,36748,50000
+    8/16/2025,38834,50000
+    8/15/2025,43228,50000
+    8/14/2025,42702,50000
+    8/13/2025,43036,50000
+    8/12/2025,42982,50000
+    8/11/2025,41557,50000
+    8/10/2025,36981,50000
+    8/9/2025,39433,50000
+    8/8/2025,43121,50000
+    8/7/2025,43369,50000
+    8/6/2025,44432,50000
+    8/5/2025,44644,50000
+    8/4/2025,44724,50000
+    8/3/2025,39092,50000
+    8/2/2025,41754,50000
+    8/1/2025,47681,50000
+    7/31/2025,47930,50000
+    7/30/2025,47033,50000
+    7/29/2025,45726,50000
+    7/28/2025,46371,50000
+    7/27/2025,40852,50000
+    7/26/2025,43094,50000
+    7/25/2025,48068,50000
+    7/24/2025,46320,50000
+    7/23/2025,45795,50000
+    7/22/2025,45330,50000
+    7/21/2025,45262,50000
+    7/20/2025,39768,50000
+    7/19/2025,41872,50000
+    7/18/2025,44427,50000
+    7/17/2025,45918,50000
+    7/16/2025,45738,50000
+    7/15/2025,45658,50000
+    7/14/2025,44534,50000
+    7/13/2025,39481,50000
+    7/12/2025,40452,50000
+    7/11/2025,44944,50000
+    7/10/2025,44464,50000
+    7/9/2025,44348,50000
+    7/8/2025,44630,50000
+    7/7/2025,44298,50000
+    7/6/2025,38328,50000
+    7/5/2025,38844,50000
+    7/4/2025,40775,50000
+    7/3/2025,45545,50000
+    7/2/2025,45003,50000
+    7/1/2025,46449,50040
+    6/30/2025,43465,50000
+    6/29/2025,37101,50000
+    6/28/2025,39186,50000
+    6/27/2025,43895,50000
+    6/26/2025,43404,50000
+    6/25/2025,43415,50000
+    6/24/2025,43117,50000
+    6/23/2025,43131,50000
+    6/22/2025,36475,50000
+    6/21/2025,39233,50000
+    6/20/2025,42912,50000
+    6/19/2025,41203,50000
+    6/18/2025,43206,50000
+    6/17/2025,43131,50000
+    6/16/2025,41186,50000
+    6/15/2025,37407,50000
+    6/14/2025,39274,50000
+    6/13/2025,44733,50000
+    6/12/2025,42821,50000
+    6/11/2025,43530,50000
+    6/10/2025,43604,50000
+    6/9/2025,42644,50000
+    6/8/2025,37507,50000
+    6/7/2025,37731,50000
+    6/6/2025,42233,50000
+    6/5/2025,43670,50000
+    6/4/2025,43870,50000
+    6/3/2025,44564,50000
+    6/2/2025,44468,50000
+    6/1/2025,39306,50000
+    5/31/2025,40201,50000
+    5/30/2025,44879,50000
+    5/29/2025,44890,50000
+    5/28/2025,44705,50000
+    5/27/2025,42523,50000
+    5/26/2025,39507,50000
+    5/25/2025,37070,50000
+    5/24/2025,39442,50000
+    5/23/2025,43600,50000
+    5/22/2025,42752,50000
+    5/21/2025,41901,50000
+    5/20/2025,42303,50000
+    5/19/2025,41156,50000
+    5/18/2025,35688,50000
+    5/17/2025,37840,50000
+    5/16/2025,42507,50000
+    5/15/2025,42017,50000
+    5/14/2025,42552,50000
+    5/13/2025,41612,50000
+    5/12/2025,41147,50000
+    5/11/2025,35686,50000
+    5/10/2025,38299,50000
+    5/9/2025,42567,50000
+    5/8/2025,42206,50000
+    5/7/2025,42281,50000
+    5/6/2025,42206,50000
+    5/5/2025,40380,50000
+    5/4/2025,35391,50000
+    5/3/2025,37928,50000
+    5/2/2025,41105,50000
+    5/1/2025,44241,50000
+    4/30/2025,43062,50000
+    4/29/2025,41882,50000
+    4/28/2025,40741,50000
+    4/27/2025,35085,50000
+    4/26/2025,37329,50000
+    4/25/2025,42035,50000
+    4/24/2025,41976,50000
+    4/23/2025,41714,50000
+    4/22/2025,41130,50000
+    4/21/2025,39634,50000
+    4/20/2025,34279,50000
+    4/19/2025,37056,50000
+    4/18/2025,41469,50000
+    4/17/2025,41713,50000
+    4/16/2025,41515,50000
+    4/15/2025,42070,50000
+    4/14/2025,40151,50000
+    4/13/2025,35112,50000
+    4/12/2025,37680,50000
+    4/11/2025,41912,50000
+    4/10/2025,41457,50000
+    4/9/2025,40787,50000
+    4/8/2025,41144,50000
+    4/7/2025,41098,50000
+    4/6/2025,34858,50000
+    4/5/2025,38227,50000
+    4/4/2025,43542,50000
+    4/3/2025,43649,50000
+    4/2/2025,42244,50000
+    4/1/2025,44043,50000
+    3/31/2025,42802,50000
+    3/30/2025,36956,50000
+    3/29/2025,38071,50000
+    3/28/2025,42749,50000
+    3/27/2025,42498,50000
+    3/26/2025,43474,50000
+    3/25/2025,41199,50000
+    3/24/2025,39626,50000
+    3/23/2025,35067,50000
+    3/22/2025,37140,50000
+    3/21/2025,40944,50000
+    3/20/2025,39910,50000
+    3/19/2025,39402,50000
+    3/18/2025,39506,50000
+    3/17/2025,37905,50000
+    3/16/2025,32959,50000
+    3/15/2025,35833,50000
+    3/14/2025,38271,50000
+    3/13/2025,40042,50000
+    3/12/2025,40205,50000
+    3/11/2025,40665,50000
+    3/10/2025,38072,50000
+    3/9/2025,34258,50000
+    3/8/2025,37634,50000
+    3/7/2025,41773,50000
+    3/6/2025,41025,50000
+    3/5/2025,38840,50000
+    3/4/2025,39610,76620
+    3/3/2025,38953,76620
+    3/2/2025,34484,76620
+    3/1/2025,37293,76620
+    2/28/2025,40725,76620
+    2/27/2025,40650,76620
+    2/26/2025,39874,76620
+    2/25/2025,38881,76620
+    2/24/2025,38494,76620
+    2/23/2025,32910,76620
+    2/22/2025,35451,76620
+    2/21/2025,39054,76620
+    2/20/2025,39408,76620
+    2/19/2025,39219,76620
+    2/18/2025,38987,76620
+    2/17/2025,37245,76620
+    2/16/2025,33866,76620
+    2/15/2025,36145,76620
+    2/14/2025,40124,76620
+    2/13/2025,38197,76620
+    2/12/2025,39171,76620
+    2/11/2025,39316,76620
+    2/10/2025,38018,76620
+    2/9/2025,32317,76620
+    2/8/2025,35155,76620
+    2/7/2025,39613,76620
+    2/6/2025,39162,76620
+    2/5/2025,38673,76620
+    2/4/2025,39867,76620
+    2/3/2025,38727,76620
+    2/2/2025,33259,76620
+    2/1/2025,36079,76620
+    1/31/2025,40263,76620
+    1/30/2025,38830,76620
+    1/29/2025,38831,76620
+    1/28/2025,39596,76620
+    1/27/2025,37765,76620
+    1/26/2025,32649,76620
+    1/25/2025,34537,76620
+    1/24/2025,37358,76620
+    1/23/2025,37848,76620
+    1/22/2025,36805,76620
+    1/21/2025,35690,76620
+    1/20/2025,33488,76620
+    1/19/2025,31078,76620
+    1/18/2025,33339,76620
+    1/17/2025,37143,76620
+    1/16/2025,35801,76620
+    1/15/2025,33883,76620
+    1/14/2025,33991,76620
+    1/13/2025,34417,76620
+    1/12/2025,30387,76620
+    1/11/2025,31706,76620
+    1/10/2025,35333,76620
+    1/9/2025,36338,76620
+    1/8/2025,35614,76620
+    1/7/2025,36402,76620
+    1/6/2025,36237,76620
+    1/5/2025,32112,76620
+    1/4/2025,34228,76620
+    1/3/2025,30462,76620
+    1/2/2025,25008,76620
+    1/1/2025,22473,76620
+    12/31/2024,24453,76620
+    12/30/2024,24385,26620
+    12/29/2024,20865,26620
+    12/28/2024,22126,26620
+    12/27/2024,24317,26620
+    12/26/2024,24040,26620
+    12/25/2024,21081,26620
+    12/24/2024,23596,26620
+    12/23/2024,24106,26620
+    12/22/2024,21261,26620
+    12/21/2024,22691,26620
+    12/20/2024,25151,26620
+    12/19/2024,24596,26620
+    12/18/2024,32487,26620
+    12/17/2024,38304,26620
+    12/16/2024,29412,26620
+    12/15/2024,21884,26620
+    12/14/2024,23739,26620
+    12/13/2024,26188,26620
+    12/12/2024,26030,26620
+    12/11/2024,26055,26620
+    12/10/2024,26047,26620
+    12/9/2024,25775,26620
+    12/8/2024,22020,26620
+    12/7/2024,23683,26620
+    12/6/2024,26151,26620
+    12/5/2024,25736,26620
+    12/4/2024,25744,26620
+    12/3/2024,25758,26620
+    12/2/2024,26025,26620
+    12/1/2024,22986,26620
+    11/30/2024,23727,26620
+    11/29/2024,24098,26620
+    11/28/2024,22605,26620
+    11/27/2024,25567,26620
+    11/26/2024,25549,26620
+    11/25/2024,25299,26620
+    11/24/2024,21752,26620
+    11/23/2024,23251,26620
+    11/22/2024,25763,26620
+    11/21/2024,26060,26620
+    11/20/2024,26371,26620
+    11/19/2024,26400,26620
+    11/18/2024,25725,26620
+    11/17/2024,22515,26620
+    11/16/2024,23187,26620
+    11/15/2024,25640,26620
+    11/14/2024,25330,26620
+    11/13/2024,24921,26620
+    11/12/2024,24162,26620
+    11/11/2024,22383,26620
+    11/10/2024,21068,26620
+    11/9/2024,22730,26620
+    11/8/2024,25862,26620
+    11/7/2024,25836,26620
+    11/6/2024,24560,26620
+    11/5/2024,25078,26620
+    11/4/2024,24759,26620
+    11/3/2024,20473,26620
+    11/2/2024,20726,26620
+    11/1/2024,24176,26620
+    10/31/2024,23636,26620
+    10/30/2024,22884,26620
+    10/29/2024,22948,26620
+    10/28/2024,23006,26620
+    10/27/2024,19646,26620
+    10/26/2024,20481,26620
+    10/25/2024,22749,26620
+    10/24/2024,23386,26620
+    10/23/2024,22822,26620
+    10/22/2024,23060,26620
+    10/21/2024,22192,26620
+    10/20/2024,19051,26620
+    10/19/2024,20345,26620
+    10/18/2024,23049,26620
+    10/17/2024,22326,26620
+    10/16/2024,23188,26620
+    10/15/2024,22635,26620
+    10/14/2024,20035,26620
+    10/13/2024,17672,26620
+    10/12/2024,17970,26620
+    10/11/2024,19930,26620
+    10/10/2024,21759,26620
+    10/9/2024,23255,26620
+    10/8/2024,23350,26620
+    10/7/2024,23729,26620
+    10/6/2024,20881,26620
+    10/5/2024,21418,26620
+    10/4/2024,24842,26620
+    10/3/2024,24676,26620
+    10/2/2024,23826,26620
+    10/1/2024,24154,26620
+    9/30/2024,23006,26620
+    9/29/2024,19706,26620
+    9/28/2024,21094,26620
+    9/27/2024,23391,26620
+    9/26/2024,23017,26620
+    9/25/2024,22726,26620
+    9/24/2024,22382,26620
+    9/23/2024,21954,26620
+    9/22/2024,19500,26620
+    9/21/2024,20644,26620
+    9/20/2024,23441,26620
+    9/19/2024,23273,26620
+    `;
+
+    // --- Data Processing ---
+    // Remove the header and filter out any empty lines
+    const dataLines = reportData.trim().split('\n').slice(1).filter(line => line.trim() !== '');
+    const parsedData = dataLines.map(line => {
+        const [date, utilized, reserved] = line.split(',');
+        return { 
+            date: new Date(date), 
+            utilized: Number(utilized) || 0, 
+            reserved: Number(reserved) || 0 
+        };
+    }).filter(d => !isNaN(d.date.getTime())); // Filter out invalid dates
+
+    // --- Chart 1: 14-Day Average Usage ---
+    const last14Days = parsedData.slice(0, 14);
+    const avgUtilized = last14Days.reduce((sum, day) => sum + day.utilized, 0) / 14;
+    const reservedCapacity14 = last14Days.length > 0 ? last14Days[0].reserved : 0;
+    const usedPercent = reservedCapacity14 > 0 ? (avgUtilized / reservedCapacity14) * 100 : 0;
+    const freePercent = 100 - usedPercent;
+
+    // --- Chart 2 & 3: Yearly Trend & Crossover Forecast ---
+    const oneYearAgo = parsedData.length > 0 ? new Date(parsedData[0].date) : new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const yearlyData = parsedData.filter(d => d.date >= oneYearAgo).reverse();
+
+    // Calculate 7-day moving average
+    const smoothedData = [];
+    if (yearlyData.length >= 7) {
+        for (let i = 6; i < yearlyData.length; i++) {
+            let sum = 0;
+            for (let j = 0; j < 7; j++) {
+                sum += yearlyData[i - j].utilized;
+            }
+            smoothedData.push({
+                date: yearlyData[i].date,
+                utilized: sum / 7,
+                reserved: yearlyData[i].reserved
+            });
+        }
+    }
+
+    // Linear Regression on last 90 days for trendline
+    const trendlineData = smoothedData.slice(-90);
+    let crossoverDateText = 'Not enough data for trendline.';
+    let trendlinePoints = [];
+
+    if (trendlineData.length > 1) {
+        const n = trendlineData.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        trendlineData.forEach((point, i) => {
+            sumX += i;
+            sumY += point.utilized;
+            sumXY += i * point.utilized;
+            sumX2 += i * i;
+        });
+
+        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const intercept = (sumY - slope * sumX) / n;
+
+        trendlinePoints = [
+            { x: trendlineData[0].date, y: intercept },
+            { x: trendlineData[n - 1].date, y: slope * (n - 1) + intercept }
+        ];
+
+        const targetCapacity = 50000;
+        crossoverDateText = 'Capacity threshold not expected to be reached with current trend.';
+        if (slope > 0 && (slope * (n - 1) + intercept) < targetCapacity) {
+            const daysToCrossover = (targetCapacity - intercept) / slope;
+            const crossoverDateObj = new Date(trendlineData[0].date);
+            crossoverDateObj.setDate(crossoverDateObj.getDate() + Math.round(daysToCrossover));
+            
+            trendlinePoints.push({ x: crossoverDateObj, y: targetCapacity });
+
+            crossoverDateText = `Predicted Crossover Date: ${crossoverDateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        }
+    }
+
+    // --- Render Charts to hidden canvases ---
+    let pieRendered = false;
+    let trendRendered = false;
+
+    const onRenderComplete = () => {
+        if (pieRendered && trendRendered) {
+            drawCombinedCanvas();
+        }
+    };
+
+    new Chart(document.getElementById('pieChartCanvas'), {
+        type: 'pie',
+        data: {
+            labels: [`Utilized (${usedPercent.toFixed(1)}%)`, `Reserved - Free (${freePercent.toFixed(1)}%)`],
+            datasets: [{
+                data: [usedPercent, freePercent],
+                backgroundColor: ['#007bff', '#cce5ff'],
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Average CRS Usage (Last 14 Days)', font: { size: 18 } }
+            },
+            animation: {
+                onComplete: () => {
+                    pieRendered = true;
+                    onRenderComplete();
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('trendChartCanvas'), {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: '7-Day Avg Utilized',
+                data: smoothedData.map(d => ({ x: d.date, y: d.utilized })),
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: true,
+                tension: 0.1,
+                pointRadius: 0
+            }, {
+                label: 'Reserved Capacity',
+                data: yearlyData.map(d => ({ x: d.date, y: d.reserved })),
+                borderColor: '#28a745',
+                borderWidth: 2,
+                pointRadius: 0,
+                borderDash: [5, 5]
+            }, {
+                label: 'Forecast Trendline (90-Day)',
+                data: trendlinePoints,
+                borderColor: '#dc3545',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { type: 'time', time: { unit: 'month' }, title: { display: true, text: 'Date' } },
+                y: { title: { display: true, text: 'Daily Ingest Amount' }, ticks: { stepSize: 5000 }, beginAtZero: true }
+            },
+            plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'CRS Utilized Trend (1-Year, 7-Day Smoothed)', font: { size: 18 } }
+            },
+            animation: {
+                onComplete: () => {
+                    trendRendered = true;
+                    onRenderComplete();
+                }
+            }
+        }
+    });
+
+    // --- Function to combine charts onto the main canvas ---
+    function drawCombinedCanvas() {
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+
+        const pieCanvas = document.getElementById('pieChartCanvas');
+        const trendCanvas = document.getElementById('trendChartCanvas');
+
+        // Fill background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+        // Draw main title
+        ctx.fillStyle = '#003366';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        ctx.fillText('CRS Usage and Forecast', mainCanvas.width / 2, 50);
+
+        // Draw the rendered charts
+        ctx.drawImage(pieCanvas, 0, 80);
+        ctx.drawImage(trendCanvas, 0, 500);
+        
+        // Draw the crossover date text
+        ctx.fillStyle = '#d9534f';
+        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        ctx.fillText(crossoverDateText, mainCanvas.width / 2, 1030);
+    }
+});
+</script>
+</body>
+</html>
